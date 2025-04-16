@@ -20,9 +20,9 @@ More info: Deployment
     <content><![CDATA[{"name":"Jimmy's Blog","short_name":"Jimmy's Blog","theme_color":"#3b70fc","background_color":"#3b70fc","display":"standalone","scope":"/","start_url":"/","icons":[{"src":"/img/siteicon/16.png","sizes":"16x16","type":"image/png"},{"src":"/img/siteicon/32.png","sizes":"32x32","type":"image/png"},{"src":"/img/siteicon/48.png","sizes":"48x48","type":"image/png"},{"src":"/img/siteicon/64.png","sizes":"64x64","type":"image/png"},{"src":"/img/siteicon/128.png","sizes":"128x128","type":"image/png"},{"src":"/img/siteicon/144.png","sizes":"144x144","type":"image/png"},{"src":"/img/siteicon/512.png","sizes":"512x512","type":"image/png"}],"splash_pages":null}]]></content>
   </entry>
   <entry>
-    <title></title>
-    <url>/js/ali_font.js</url>
-    <content><![CDATA[window._iconfont_svg_string_4894301='',(n=>{var t=(e=(e=document.getElementsByTagName("script"))[e.length-1]).getAttribute("data-injectcss"),e=e.getAttribute("data-disable-injectsvg");if(!e){var i,o,a,d,c,l=function(t,e){e.parentNode.insertBefore(t,e)};if(t&&!n.__iconfont__svg__cssinject__){n.__iconfont__svg__cssinject__=!0;try{document.write(".svgfont {display: inline-block;width: 1em;height: 1em;fill: currentColor;vertical-align: -0.1em;font-size:16px;}")}catch(t){console&&console.log(t)}}i=function(){var t,e=document.createElement("div");e.innerHTML=n._iconfont_svg_string_4894301,(e=e.getElementsByTagName("svg")[0])&&(e.setAttribute("aria-hidden","true"),e.style.position="absolute",e.style.width=0,e.style.height=0,e.style.overflow="hidden",e=e,(t=document.body).firstChild?l(e,t.firstChild):t.appendChild(e))},document.addEventListener?~["complete","loaded","interactive"].indexOf(document.readyState)?setTimeout(i,0):(o=function(){document.removeEventListener("DOMContentLoaded",o,!1),i()},document.addEventListener("DOMContentLoaded",o,!1)):document.attachEvent&&(a=i,d=n.document,c=!1,r(),d.onreadystatechange=function(){"complete"==d.readyState&&(d.onreadystatechange=null,s())})}function s(){c||(c=!0,a())}function r(){try{d.documentElement.doScroll("left")}catch(t){return void setTimeout(r,50)}s()}})(window);]]></content>
+    <title>分类</title>
+    <url>/categories/index.html</url>
+    <content><![CDATA[]]></content>
   </entry>
   <entry>
     <title></title>
@@ -403,5 +403,15 @@ More info: Deployment
     background: url('/img/bg.jpg') no-repeat center center fixed;
     background-size: cover;
   }]]></content>
+  </entry>
+  <entry>
+    <title></title>
+    <url>/js/ali_font.js</url>
+    <content><![CDATA[window._iconfont_svg_string_4894301='',(n=>{var t=(e=(e=document.getElementsByTagName("script"))[e.length-1]).getAttribute("data-injectcss"),e=e.getAttribute("data-disable-injectsvg");if(!e){var i,o,a,d,c,l=function(t,e){e.parentNode.insertBefore(t,e)};if(t&&!n.__iconfont__svg__cssinject__){n.__iconfont__svg__cssinject__=!0;try{document.write(".svgfont {display: inline-block;width: 1em;height: 1em;fill: currentColor;vertical-align: -0.1em;font-size:16px;}")}catch(t){console&&console.log(t)}}i=function(){var t,e=document.createElement("div");e.innerHTML=n._iconfont_svg_string_4894301,(e=e.getElementsByTagName("svg")[0])&&(e.setAttribute("aria-hidden","true"),e.style.position="absolute",e.style.width=0,e.style.height=0,e.style.overflow="hidden",e=e,(t=document.body).firstChild?l(e,t.firstChild):t.appendChild(e))},document.addEventListener?~["complete","loaded","interactive"].indexOf(document.readyState)?setTimeout(i,0):(o=function(){document.removeEventListener("DOMContentLoaded",o,!1),i()},document.addEventListener("DOMContentLoaded",o,!1)):document.attachEvent&&(a=i,d=n.document,c=!1,r(),d.onreadystatechange=function(){"complete"==d.readyState&&(d.onreadystatechange=null,s())})}function s(){c||(c=!0,a())}function r(){try{d.documentElement.doScroll("left")}catch(t){return void setTimeout(r,50)}s()}})(window);]]></content>
+  </entry>
+  <entry>
+    <title>友人链</title>
+    <url>/link/index.html</url>
+    <content><![CDATA[]]></content>
   </entry>
 </search>
