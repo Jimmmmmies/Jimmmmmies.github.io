@@ -9,6 +9,29 @@
 ]]></content>
   </entry>
   <entry>
+    <title>深度学习基础</title>
+    <url>/post/c0b3d81d.html</url>
+    <content><![CDATA[不知道多久之前就说要写一些关于深度学习的笔记，结果被各种事情导致一拖再拖（当然也有自己懒的因素）。直到今天看完Andej Karpathy的第三节课，我深知若再不记录，我只会学一点忘一点……
+Pytorch InternalsPytorch Internals我这里主要记录关于pytorch中的核心数据结构——张量，其他内容大家感兴趣可以详细阅读上面讲解pytorch内部原理的博客。
+张量是pytorch的核心数据结构，他由数据和元数据构成。元数据包括张量的大小，数据类型，张量所依赖的设备（CPU or CUDA?）和步幅。其中步幅（strides）是pytorch的特色之一。
+每个张量都是线性存储的。我们以二维的tensor举例，实际上每个数据的内存位置都是连续的。那么pytorch引入步幅这一元数据的作用是什么？
+如上图，我们想要获取二维张量中（1，0）位置的数据，此时，每个维度x对应的步幅大小则为$2^x$，我们将索引和对应步幅大小乘积并求和，最后便能得到在我们想要的数据在线性内存中的位置。
+步幅很有意思的应用在于，我们获取一列的数据不再需要利用循环。还是上图中的2维tensor，其中的第二列数据，通过tensor(:, 1)便能很方便的获取。获取一行的数据也是类似，比如第一行，则为tensor(1, \:)。
+Broadcasting 广播机制在pytorch以及numpy中，广播机制允许在进行逐元素操作时，使形状不同的张量兼容，而无需手动扩展张量的维度。广播的目的是避免显式地复制数据，节省计算资源。
+广播的规则有以下四点：
+
+如果两个张量的形状不同，pytorch会从后往前（右对齐）匹配，如果无法匹配，说明两个张量形状不兼容，无法广播，pytorch则会报错。
+可以广播的条件：维度相等或其中一个张量的维度为1。
+如果一个维度为1，则会沿着该维度进行扩展（但不会复制数据）。
+如果某个张量缺少某个维度，pytorch会在该维度自动补充1。
+
+下面给出一个多维度广播的示例：A = torch.tensor([[[1, 2, 3]], [[4, 5, 6]]])  # 形状 (2, 1, 3)B = torch.tensor([10, 20, 30])  # 形状 (3,)C = A + Bprint(C)# 输出：tensor([[[11, 22, 33]],        [[14, 25, 36]]])
+One-Hot Encoding 独热编码]]></content>
+      <categories>
+        <category>Deep learning</category>
+      </categories>
+  </entry>
+  <entry>
     <title></title>
     <url>/manifest.json</url>
     <content><![CDATA[{"name":"Jimmy's Blog","short_name":"Jimmy's Blog","theme_color":"#3b70fc","background_color":"#3b70fc","display":"standalone","scope":"/","start_url":"/","icons":[{"src":"/img/siteicon/16.png","sizes":"16x16","type":"image/png"},{"src":"/img/siteicon/32.png","sizes":"32x32","type":"image/png"},{"src":"/img/siteicon/48.png","sizes":"48x48","type":"image/png"},{"src":"/img/siteicon/64.png","sizes":"64x64","type":"image/png"},{"src":"/img/siteicon/128.png","sizes":"128x128","type":"image/png"},{"src":"/img/siteicon/144.png","sizes":"144x144","type":"image/png"},{"src":"/img/siteicon/512.png","sizes":"512x512","type":"image/png"}],"splash_pages":null}]]></content>
