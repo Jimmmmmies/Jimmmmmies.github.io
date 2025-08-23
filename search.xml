@@ -54,6 +54,19 @@ Red $\rightarrow$ 100
       </categories>
   </entry>
   <entry>
+    <title>Autobots, assemble!</title>
+    <url>/post/1e09a18d.html</url>
+    <content><![CDATA[暑假开摆了许久，最近有了一些学习的动力，终于终于终于刷完了andej的课，学习到了当下大语言模型最主流的架构——Transformer。这篇博客主要则是记录我在学习Transformer模型以及通读“Attention is all you need”论文后的一些个人思考和总结。你应该发现了标题是“Autobots, assemble”，如果你和我一样是变形金刚的狂热粉丝，你应该能get到这个小彩蛋。
+自注意力机制 Self-attention在Transformer架构推出之前，人们主要采用的是CNN和RNN架构，在论文前言部分，就提到了RNN架构的问题。首先他是一个时序模型，当前词语的隐藏状态是由前一个词语的隐藏状态和当前词语所决定的。换句话说，如果前面词语的隐藏状态没有计算出来，我们就无法预测下一个词。这种时序模型的计算性能很差，因为他没有办法并行处理。其次这些随着时序一步步记录的每个词语的隐藏状态，随着模型的训练可能会失真，而想要避免失真只能讲隐藏矩阵进一步扩大，但与此同时也会带来巨大的内存开销。
+Transformer中的自注意力机制，则很好的解决了RNN架构中出现的这种问题。它选择使用缩放点积注意力。我们首先接受一个输入，得到他的词嵌入矩阵和位置嵌入矩阵的和，然后我们利用三个可训练的权重矩阵WQ，WK，WV生成查询向量，键向量和值向量。Query则表示“提问者”，即当前所需要关注的问题，用于与其他位置的Key匹配相似度。Key表示其他位置的标识，用于与Query计算关联度。Value则表示实际存储的信息，根据Query和Key的相似度加权求和后输出。自注意力机制的公式如下：
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^\mathrm{T}}{\sqrt{d_k}}\right)V我们知道，两个向量越相似，在对方的投影这越大。因此，使用向量的点积可以很好的表达相似度这一概念，当前词块可以从中知道需要融合更多哪个词块的信息。同时我们可以看到，softmax函数中还除以了$\sqrt{d_k}$，即键向量的维度，这么做是为了防止矩阵的方差过大，和归一化中的操作是一样的。
+多头注意力机制 Multi-head Self-attention开头我们提到，Transformer架构相比于RNN，它的优点在于并行计算。多头注意力机制的核心就在于，将关联度矩阵投影到多个低维度的向量中，让这些向量并行计算，以扩展模型专注于不同位置的能力。相当于给了模型多次机会学习不同的投影方式，然后将每次学习到的关联度矩阵连接在一起，再做一次投影整合全部的信息，可以类比于CNN中的多个输出通道。
+交叉注意力机制 Cross-attention]]></content>
+      <categories>
+        <category>Paper reading</category>
+      </categories>
+  </entry>
+  <entry>
     <title></title>
     <url>/manifest.json</url>
     <content><![CDATA[{"name":"Jimmy's Blog","short_name":"Jimmy's Blog","theme_color":"#3b70fc","background_color":"#3b70fc","display":"standalone","scope":"/","start_url":"/","icons":[{"src":"/img/siteicon/16.png","sizes":"16x16","type":"image/png"},{"src":"/img/siteicon/32.png","sizes":"32x32","type":"image/png"},{"src":"/img/siteicon/48.png","sizes":"48x48","type":"image/png"},{"src":"/img/siteicon/64.png","sizes":"64x64","type":"image/png"},{"src":"/img/siteicon/128.png","sizes":"128x128","type":"image/png"},{"src":"/img/siteicon/144.png","sizes":"144x144","type":"image/png"},{"src":"/img/siteicon/512.png","sizes":"512x512","type":"image/png"}],"splash_pages":null}]]></content>
