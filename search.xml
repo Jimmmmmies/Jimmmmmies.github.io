@@ -1,126 +1,499 @@
 <?xml version="1.0" encoding="utf-8"?>
-<search> 
-  
-  
-    
-    <entry>
-      <title>Autobots, assemble!</title>
-      <link href="/post/1e09a18d.html"/>
-      <url>/post/1e09a18d.html</url>
-      
-        <content type="html"><![CDATA[<p>暑假开摆了许久，最近有了一些学习的动力，终于终于终于刷完了andej的课，学习到了当下大语言模型最主流的架构——Transformer。这篇博客主要则是记录我在学习Transformer模型以及通读“Attention is all you need”论文后的一些个人思考和总结。你应该发现了标题是“Autobots, assemble”，如果你和我一样是变形金刚的狂热粉丝，你应该能get到这个小彩蛋。</p><h3 id="自注意力机制-Self-attention"><a href="#自注意力机制-Self-attention" class="headerlink" title="自注意力机制 Self-attention"></a>自注意力机制 Self-attention</h3><p>在Transformer架构推出之前，人们主要采用的是CNN和RNN架构，在论文前言部分，就提到了RNN架构的问题。首先他是一个时序模型，当前词语的隐藏状态是由前一个词语的隐藏状态和当前词语所决定的。换句话说，如果前面词语的隐藏状态没有计算出来，我们就无法预测下一个词。这种时序模型的计算性能很差，因为他没有办法并行处理。其次这些随着时序一步步记录的每个词语的隐藏状态，随着模型的训练可能会失真，而想要避免失真只能讲隐藏矩阵进一步扩大，但与此同时也会带来巨大的内存开销。</p><p>Transformer中的自注意力机制，则很好的解决了RNN架构中出现的这种问题。它选择使用缩放点积注意力。我们首先接受一个输入，得到他的词嵌入矩阵和位置嵌入矩阵的和，然后我们利用三个可训练的权重矩阵W<sub>Q</sub>，W<sub>K</sub>，W<sub>V</sub>生成查询向量，键向量和值向量。Query则表示“提问者”，即当前所需要关注的问题，用于与其他位置的Key匹配相似度。Key表示其他位置的标识，用于与Query计算关联度。Value则表示实际存储的信息，根据Query和Key的相似度加权求和后输出。自注意力机制的公式如下：</p><script type="math/tex; mode=display">\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^\mathrm{T}}{\sqrt{d_k}}\right)V</script><p>我们知道，两个向量越相似，在对方的投影这越大。因此，使用向量的点积可以很好的表达相似度这一概念，当前词块可以从中知道需要融合更多哪个词块的信息。同时我们可以看到，softmax函数中还除以了$\sqrt{d_k}$，即键向量的维度，这么做是为了防止矩阵的方差过大，和归一化中的操作是一样的。</p><h3 id="多头注意力机制-Multi-head-Self-attention"><a href="#多头注意力机制-Multi-head-Self-attention" class="headerlink" title="多头注意力机制 Multi-head Self-attention"></a>多头注意力机制 Multi-head Self-attention</h3><p><img src="/img/article/Multihead.png" alt="Multihead" height="300" style="display: block; margin-left: 0;"/><br>开头我们提到，Transformer架构相比于RNN，它的优点在于并行计算。多头注意力机制的核心就在于，将关联度矩阵投影到多个低维度的向量中，让这些向量并行计算，以扩展模型专注于不同位置的能力。相当于给了模型多次机会学习不同的投影方式，然后将每次学习到的关联度矩阵连接在一起，再做一次投影整合全部的信息，可以类比于CNN中的多个输出通道。</p><h3 id="交叉注意力机制-Cross-attention"><a href="#交叉注意力机制-Cross-attention" class="headerlink" title="交叉注意力机制 Cross-attention"></a>交叉注意力机制 Cross-attention</h3><p><img src="/img/article/Transformer.png" alt="Transformer" height="600" style="display: block; margin-left: 0;"/><br>论文中提到，Transformer架构其实是为了机器翻译而设计的，这也是Transformer架构图是由编码器和解码器共同组成的原因，当然这两者并不是一定要绑定在一起的，andej的Zero to Hero课中实现的gpt2只需要学习文本生成文本，不需要编码器，在未来也会学习到很多编码器和解码器单独应用的模型架构。每一个编码器和解码器模块都由多头注意力和前馈层组成。要注意的是，在解码器中，多头注意力是Masked的，因为在解码的过程中，每一个词块只能注意到历史的词块，通过注意力机制得到与历史词块之间的关联度矩阵。模型是为了学习训练集，预测生成下一个词块，所以在解码器中是不能注意到未来词块的信息的。因此，我们要利用一个下三角的矩阵，将关联度矩阵每个词块与未来词块的关联度设置为0。相反，在编码器中，需要全知性，需要全局捕捉输入序列的双向依赖关系，因此允许每个位置关注序列中的所有其他位置。</p><p>回到正题，交叉注意力机制大体上和多头注意力机制一样，区别在于注意力机制中Q，K，V的来源。Query的来源是解码器，是一个需要补充信息的目标序列，而Key和Value的来源则是编码器，是一个提供信息的参考序列。这样的设计使得模型可以让两个不同的序列建立联系，从而实现信息的融合。</p><h3 id="前馈层-Feed-Forward-Pass"><a href="#前馈层-Feed-Forward-Pass" class="headerlink" title="前馈层 Feed Forward Pass"></a>前馈层 Feed Forward Pass</h3><p>在编码器和解码器中，均存在一个前馈层。前馈层实际上就是一个MLP的架构，他的主要作用就是对关联度矩阵中的特征信息进行非线性的变化和增强（论文中提到将神经元的数量放大到原来的四倍，经过ReLU/GeLU函数进行非线性变换，最后变换为输入时的shape），让模型具有更强大的表达能力。</p><script type="math/tex; mode=display">\text{FFN}(x) = \max(0, xW_1 + b_1)W_2 + b_2</script>]]></content>
-      
-      
+<search>
+  <entry>
+    <title>开站首文！</title>
+    <url>/post/ed43f525.html</url>
+    <content><![CDATA[Welcome to my blog!在一顿折腾之后，我的个人博客也成功建立了。建立个人博客原因有许多，一是想记录自己技术栈不断丰富的历程，给我记笔记一些动力。二是分享记录自己的个人生活。三是跟风，很多优秀的程序员都有自己的个人博客，我也就跟着搭建了一个哈哈哈哈哈哈！
+像我上面所说的，博客主要是用来记录生活和学习笔记。学习笔记是阶段性理解，可能有误大家辨证看待。生活方面则比较随性，更多的是闲暇时的思考和球评（其他的私人生活肯定都在朋友圈啦！）。
+网站的UI会不断修改，功能也会日趋完善，敬请期待！
+]]></content>
+  </entry>
+  <entry>
+    <title>深度学习基础</title>
+    <url>/post/c0b3d81d.html</url>
+    <content><![CDATA[不知道多久之前就说要写一些关于深度学习的笔记，结果被各种事情导致一拖再拖（当然也有自己懒的因素）。直到今天看完Andrej Karpathy的第三节课，我深知若再不记录，我只会学一点忘一点……
+Pytorch InternalsPytorch Internals我这里主要记录关于pytorch中的核心数据结构——张量，其他内容大家感兴趣可以详细阅读上面讲解pytorch内部原理的博客。
+张量是pytorch的核心数据结构，他由数据和元数据构成。元数据包括张量的大小，数据类型，张量所依赖的设备（CPU or CUDA?）和步幅。其中步幅（strides）是pytorch的特色之一。
+每个张量都是线性存储的。我们以二维的tensor举例，实际上每个数据的内存位置都是连续的。那么pytorch引入步幅这一元数据的作用是什么？
+如上图，我们想要获取二维张量中(1，0)位置的数据，此时，每个维度x对应的步幅大小则为$2^x$，我们将索引和对应步幅大小乘积并求和，最后便能得到在我们想要的数据在线性内存中的位置。
+步幅很有意思的应用在于，我们获取一列的数据不再需要利用循环。还是上图中的2维tensor，其中的第二列数据，通过tensor(:,1)便能很方便的获取。获取一行的数据也是类似，比如第一行，则为tensor(1,:)。
+Broadcasting 广播机制在pytorch以及numpy中，广播机制允许在进行逐元素操作时，使形状不同的张量兼容，而无需手动扩展张量的维度。广播的目的是避免显式地复制数据，节省计算资源。
+广播的规则有以下四点：
+
+如果两个张量的形状不同，pytorch会从后往前（右对齐）匹配，如果无法匹配，说明两个张量形状不兼容，无法广播，pytorch则会报错。
+可以广播的条件：维度相等或其中一个张量的维度为1。
+如果一个维度为1，则会沿着该维度进行扩展（但不会复制数据）。
+如果某个张量缺少某个维度，pytorch会在该维度自动补充1。
+
+下面给出一个多维度广播的示例：A = torch.tensor([[[1, 2, 3]], [[4, 5, 6]]])  # 形状 (2, 1, 3)B = torch.tensor([10, 20, 30])  # 形状 (3,)C = A + Bprint(C)# 输出：tensor([[[11, 22, 33]],        [[14, 25, 36]]])
+One-Hot Encoding 独热编码在机器学习中，我们通常会遇到分类问题。例如：[‘Blue’, ‘Green’, ‘Red’]，我们当然可以使用[0, 1, 2]的方式对这三个颜色特征进行编码，以区分它们。但这种方式会带来问题：三个颜色之间并非等距，存在偏序关系。这种编码会使得计算机学习到一些我们并不期望得到的特征，比如认为蓝色和绿色比起蓝色和红色相似度更高，因为它们之间距离更近。
+独热编码就避免了这个问题的发生。它主要是采用N位状态寄存器来对N个状态进行编码，每个状态都由他独立的寄存器位，并且在任意时候只有一位有效。
+仍然是上面的例子，[‘Blue’, ‘Green’, ‘Red’]一共三种颜色，所以采用三位状态寄存器进行编码，得到:
+
+Blue $\rightarrow$ 001
+Green $\rightarrow$ 010
+Red $\rightarrow$ 100
+
+我们可以看到，这三个编码互相是等距的，均为$\sqrt2$，说明它们之间具有相同的特性（均是颜色），不存在偏序关系，避免了第一种编码所出现的问题。
+那么什么情况下不使用独热编码？
+
+当特征之间距离定义合适，存在偏序关系时，我们不适用独热编码。比如一个人的受教育程度，分为小学，初中，高中，大学，此时我们简单的使用[0, 1, 2, 3]进行编码即可。
+在决策树中，即使变量之间不存在任何偏序关系，我们通常也不使用独热编码。因为每个分叉仅决定“是否属于某个类别”，不关心数值的大小，所以简单的编码即可。
+
+如何理解偏差，方差和噪声参考博客如上图，红色区域是学习算法完美的正确预测值，蓝色点为每个数据集所训练出的模型对样本的预测值。对于方差，蓝色点越集中，方差越小。对于偏差，蓝色点越偏离红色区域，偏差则越大，预测效果越差。偏差和方差可以与欠拟合和过拟合进行比较：训练初期，欠拟合，学习器的拟合能力不够强，偏差比较大。在充分训练后，学习器的拟合能力非常强，训练数据的轻微扰动都会导致学习器发生显著变化，过拟合，方差大。
+噪声是指数据中无法避免的随机误差，主要包括标签错误、特征测量误差、环境干扰等，反映了数据本身的可靠性问题。
+总结：
+
+偏差： 度量学习算法的期望预测与真实结果的偏离程度，即刻画了学习算法本身的拟合能力。 
+方差： 度量了同样大小的训练集的变动所导致的学习性能的变化，即刻画了数据扰动所产生的影响。
+噪声： 表达了在当前任务上任何学习算法所能达到的期望泛化误差的下界，即刻画了学习问题本身的难度。
+
+残差连接 Residual Connection在Transformer架构中，处处可以看到残差连接的身影，这是一种如今在深度学习模型中经常使用的技术，旨在解决梯度消失。残差连接首次由何恺明等人在2015年的论文《Deep Residual Learning for Image Recognition》中提出。上图是残差连接的结构。我们可以看到残差连接实际上是建立了输入输出之间的一条捷径，一条“高速公路”。假设输入为x，经过非线性变换后输出为F(x)，引入残差连接后，输出就变为了F(x) + x，模型此时只需要学习残差映射，即为F(x) = H(x) - x。
+这样做的好处是，首先可以避免梯度的消失和爆炸。对于梯度爆炸，因为残差连接的引入，网络可以在需要时倾向于学习更简单的函数，输入直接恒等连接至输出，这样在反向传播时就避免了一次梯度的相乘，防止梯度爆炸的情况产生。而对于梯度消失，即使学习的过程中，残差映射的梯度消失了，输入也能传输至输出，上一层的梯度可以完好无损的传递到下一层。
+其次，残差连接加快模型的收敛。上面提到了网络在需要时倾向于学习更简单的函数，在一些恒等映射或者接近于恒等映射的情况，这条“高速公路”将输入直接连接至输出，加快网络收敛，毕竟让复杂的非线性函数去学习恒等映射是相当困难的。
+最后，残差连接具有很强的扩展性。在很多架构中都能看到残差连接的身影，它可以很轻松的加入到这些架构中。同时在训练很深的网络时，残差连接的特性使得网络可以维持性能。
+]]></content>
       <categories>
-          
-          <category> Paper reading </category>
-          
+        <category>Deep learning</category>
       </categories>
-      
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>深度学习基础</title>
-      <link href="/post/c0b3d81d.html"/>
-      <url>/post/c0b3d81d.html</url>
-      
-        <content type="html"><![CDATA[<p>不知道多久之前就说要写一些关于深度学习的笔记，结果被各种事情导致一拖再拖（当然也有自己懒的因素）。直到今天看完Andej Karpathy的第三节课，我深知若再不记录，我只会学一点忘一点……</p><h2 id="Pytorch-Internals"><a href="#Pytorch-Internals" class="headerlink" title="Pytorch Internals"></a>Pytorch Internals</h2><p><a href="&quot;https://blog.ezyang.com/2019/05/pytorch-internals/?continueFlag=eedc4676ba30adbf1803b534c0e8fd0e&quot;">Pytorch Internals</a><br>我这里主要记录关于pytorch中的核心数据结构——张量，其他内容大家感兴趣可以详细阅读上面讲解pytorch内部原理的博客。</p><p>张量是pytorch的核心数据结构，他由数据和元数据构成。元数据包括张量的大小，数据类型，张量所依赖的设备（CPU or CUDA?）和步幅。其中步幅（strides）是pytorch的特色之一。</p><p>每个张量都是线性存储的。我们以二维的tensor举例，实际上每个数据的内存位置都是连续的。那么pytorch引入步幅这一元数据的作用是什么？</p><p><img src="/img/article/strides.png" alt="Strides"><br>如上图，我们想要获取二维张量中(1，0)位置的数据，此时，每个维度x对应的步幅大小则为$2^x$，我们将索引和对应步幅大小乘积并求和，最后便能得到在我们想要的数据在线性内存中的位置。</p><p>步幅很有意思的应用在于，我们获取一列的数据不再需要利用循环。还是上图中的2维tensor，其中的第二列数据，通过tensor(:,1)便能很方便的获取。获取一行的数据也是类似，比如第一行，则为tensor(1,:)。</p><h2 id="Broadcasting-广播机制"><a href="#Broadcasting-广播机制" class="headerlink" title="Broadcasting 广播机制"></a>Broadcasting 广播机制</h2><p>在pytorch以及numpy中，广播机制允许在进行逐元素操作时，使形状不同的张量兼容，而无需手动扩展张量的维度。广播的目的是避免显式地复制数据，节省计算资源。</p><p>广播的规则有以下四点：</p><ul><li>如果两个张量的形状不同，pytorch会从后往前（右对齐）匹配，如果无法匹配，说明两个张量形状不兼容，无法广播，pytorch则会报错。</li><li>可以广播的条件：维度相等或其中一个张量的维度为1。</li><li>如果一个维度为1，则会沿着该维度进行扩展（但不会复制数据）。</li><li>如果某个张量缺少某个维度，pytorch会在该维度自动补充1。</li></ul><p>下面给出一个多维度广播的示例：<br><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">A = torch.tensor([[[1, 2, 3]], [[4, 5, 6]]])  # 形状 (2, 1, 3)</span><br><span class="line">B = torch.tensor([10, 20, 30])  # 形状 (3,)</span><br><span class="line">C = A + B</span><br><span class="line">print(C)</span><br><span class="line"></span><br><span class="line"># 输出：tensor([[[11, 22, 33]],</span><br><span class="line">        [[14, 25, 36]]])</span><br></pre></td></tr></table></figure></p><h2 id="One-Hot-Encoding-独热编码"><a href="#One-Hot-Encoding-独热编码" class="headerlink" title="One-Hot Encoding 独热编码"></a>One-Hot Encoding 独热编码</h2><p>在机器学习中，我们通常会遇到分类问题。例如：[‘Blue’, ‘Green’, ‘Red’]，我们当然可以使用[0, 1, 2]的方式对这三个颜色特征进行编码，以区分它们。但这种方式会带来问题：三个颜色之间并非等距，存在偏序关系。这种编码会使得计算机学习到一些我们并不期望得到的特征，比如认为蓝色和绿色比起蓝色和红色相似度更高，因为它们之间距离更近。</p><p>独热编码就避免了这个问题的发生。它主要是采用N位状态寄存器来对N个状态进行编码，每个状态都由他独立的寄存器位，并且在任意时候只有一位有效。</p><p>仍然是上面的例子，[‘Blue’, ‘Green’, ‘Red’]一共三种颜色，所以采用三位状态寄存器进行编码，得到:</p><ul><li><strong>Blue $\rightarrow$ 001</strong></li><li><strong>Green $\rightarrow$ 010</strong></li><li><strong>Red $\rightarrow$ 100</strong></li></ul><p>我们可以看到，这三个编码互相是等距的，均为$\sqrt2$，说明它们之间具有相同的特性（均是颜色），不存在偏序关系，避免了第一种编码所出现的问题。</p><p><strong>那么什么情况下不使用独热编码？</strong></p><ul><li>当特征之间距离定义合适，存在偏序关系时，我们不适用独热编码。比如一个人的受教育程度，分为小学，初中，高中，大学，此时我们简单的使用[0, 1, 2, 3]进行编码即可。</li><li>在决策树中，即使变量之间不存在任何偏序关系，我们通常也不使用独热编码。因为每个分叉仅决定“是否属于某个类别”，不关心数值的大小，所以简单的编码即可。</li></ul><h2 id="如何理解偏差，方差和噪声"><a href="#如何理解偏差，方差和噪声" class="headerlink" title="如何理解偏差，方差和噪声"></a>如何理解偏差，方差和噪声</h2><p><a href="https://blog.csdn.net/simple_the_best/article/details/71167786">参考博客</a><br><img src="/img/article/bias.png" alt="Bias"><br>如上图，红色区域是学习算法完美的正确预测值，蓝色点为每个数据集所训练出的模型对样本的预测值。对于方差，蓝色点越集中，方差越小。对于偏差，蓝色点越偏离红色区域，偏差则越大，预测效果越差。<br><img src="/img/article/performance.png" alt="Performance"><br>偏差和方差可以与欠拟合和过拟合进行比较：训练初期，欠拟合，学习器的拟合能力不够强，偏差比较大。在充分训练后，学习器的拟合能力非常强，训练数据的轻微扰动都会导致学习器发生显著变化，过拟合，方差大。</p><p>噪声是指数据中无法避免的随机误差，主要包括标签错误、特征测量误差、环境干扰等，反映了数据本身的可靠性问题。</p><p><strong>总结：</strong></p><ul><li><strong>偏差：</strong> 度量学习算法的期望预测与真实结果的偏离程度，即刻画了学习算法本身的拟合能力。 </li><li><strong>方差：</strong> 度量了同样大小的训练集的变动所导致的学习性能的变化，即刻画了数据扰动所产生的影响。</li><li><strong>噪声：</strong> 表达了在当前任务上任何学习算法所能达到的期望泛化误差的下界，即刻画了学习问题本身的难度。</li></ul><h2 id="残差连接-Residual-Connection"><a href="#残差连接-Residual-Connection" class="headerlink" title="残差连接 Residual Connection"></a>残差连接 Residual Connection</h2><p>在Transformer架构中，处处可以看到残差连接的身影，这是一种如今在深度学习模型中经常使用的技术，旨在解决梯度消失。残差连接首次由何恺明等人在2015年的论文《Deep Residual Learning for Image Recognition》中提出。<br><img src="/img/article/Residual.jpeg" alt="Residual"><br>上图是残差连接的结构。我们可以看到残差连接实际上是建立了输入输出之间的一条捷径，一条“高速公路”。假设输入为x，经过非线性变换后输出为F(x)，引入残差连接后，输出就变为了F(x) + x，模型此时只需要学习残差映射，即为F(x) = H(x) - x。</p><p>这样做的好处是，首先可以避免梯度的消失和爆炸。对于梯度爆炸，因为残差连接的引入，网络可以在需要时倾向于学习更简单的函数，输入直接恒等连接至输出，这样在反向传播时就避免了一次梯度的相乘，防止梯度爆炸的情况产生。而对于梯度消失，即使学习的过程中，残差映射的梯度消失了，输入也能传输至输出，上一层的梯度可以完好无损的传递到下一层。</p><p>其次，残差连接加快模型的收敛。上面提到了网络在需要时倾向于学习更简单的函数，在一些恒等映射或者接近于恒等映射的情况，这条“高速公路”将输入直接连接至输出，加快网络收敛，毕竟让复杂的非线性函数去学习恒等映射是相当困难的。</p><p>最后，残差连接具有很强的扩展性。在很多架构中都能看到残差连接的身影，它可以很轻松的加入到这些架构中。同时在训练很深的网络时，残差连接的特性使得网络可以维持性能。</p>]]></content>
-      
-      
+  </entry>
+  <entry>
+    <title>Autobots, assemble!</title>
+    <url>/post/1e09a18d.html</url>
+    <content><![CDATA[暑假开摆了许久，最近有了一些学习的动力，终于终于终于刷完了Andrej的课，学习到了当下大语言模型最主流的架构——Transformer。这篇博客主要则是记录我在学习Transformer模型以及通读“Attention is all you need”论文后的一些个人思考和总结。你应该发现了标题是“Autobots, assemble”，如果你和我一样是变形金刚的狂热粉丝，你应该能get到这个小彩蛋。
+自注意力机制 Self-attention在Transformer架构推出之前，人们主要采用的是CNN和RNN架构，在论文前言部分，就提到了RNN架构的问题。首先他是一个时序模型，当前词语的隐藏状态是由前一个词语的隐藏状态和当前词语所决定的。换句话说，如果前面词语的隐藏状态没有计算出来，我们就无法预测下一个词。这种时序模型的计算性能很差，因为他没有办法并行处理。其次这些随着时序一步步记录的每个词语的隐藏状态，随着模型的训练可能会失真，而想要避免失真只能讲隐藏矩阵进一步扩大，但与此同时也会带来巨大的内存开销。
+Transformer中的自注意力机制，则很好的解决了RNN架构中出现的这种问题。它选择使用缩放点积注意力。我们首先接受一个输入，得到他的词嵌入矩阵和位置嵌入矩阵的和，然后我们利用三个可训练的权重矩阵WQ，WK，WV生成查询向量，键向量和值向量。Query则表示“提问者”，即当前所需要关注的问题，用于与其他位置的Key匹配相似度。Key表示其他位置的标识，用于与Query计算关联度。Value则表示实际存储的信息，根据Query和Key的相似度加权求和后输出。自注意力机制的公式如下：
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^\mathrm{T}}{\sqrt{d_k}}\right)V我们知道，两个向量越相似，在对方的投影这越大。因此，使用向量的点积可以很好的表达相似度这一概念，当前词块可以从中知道需要融合更多哪个词块的信息。同时我们可以看到，softmax函数中还除以了$\sqrt{d_k}$，即键向量的维度，这么做是为了防止矩阵的方差过大，和归一化中的操作是一样的。
+多头注意力机制 Multi-head Self-attention开头我们提到，Transformer架构相比于RNN，它的优点在于并行计算。多头注意力机制的核心就在于，将关联度矩阵投影到多个低维度的向量中，让这些向量并行计算，以扩展模型专注于不同位置的能力。相当于给了模型多次机会学习不同的投影方式，然后将每次学习到的关联度矩阵连接在一起，再做一次投影整合全部的信息，可以类比于CNN中的多个输出通道。
+交叉注意力机制 Cross-attention论文中提到，Transformer架构其实是为了机器翻译而设计的，这也是Transformer架构图是由编码器和解码器共同组成的原因，当然这两者并不是一定要绑定在一起，Andrej的Zero to Hero课中实现的gpt2只需要学习文本生成文本，不需要编码器，在未来也会学习到很多编码器和解码器单独应用的模型架构。每一个编码器和解码器模块都由多头注意力和前馈层组成。要注意的是，在解码器中，多头注意力是Masked的，因为在解码的过程中，每一个词块只能注意到历史的词块，通过注意力机制得到与历史词块之间的关联度矩阵。模型是为了学习训练集，预测生成下一个词块，所以在解码器中是不能注意到未来词块的信息的。因此，我们要利用一个下三角的矩阵，将关联度矩阵每个词块与未来词块的关联度设置为0。相反，在编码器中，需要全知性，需要全局捕捉输入序列的双向依赖关系，因此允许每个位置关注序列中的所有其他位置。
+回到正题，交叉注意力机制大体上和多头注意力机制一样，区别在于注意力机制中Q，K，V的来源。Query的来源是解码器，是一个需要补充信息的目标序列，而Key和Value的来源则是编码器，是一个提供信息的参考序列。这样的设计使得模型可以让两个不同的序列建立联系，从而实现信息的融合。
+前馈层 Feed Forward Pass在编码器和解码器中，均存在一个前馈层。前馈层实际上就是一个MLP的架构，他的主要作用就是对关联度矩阵中的特征信息进行非线性的变化和增强（论文中提到将神经元的数量放大到原来的四倍，经过ReLU/GeLU函数进行非线性变换，最后变换为输入时的shape），让模型具有更强大的表达能力。
+
+\text{FFN}(x) = \max(0, xW_1 + b_1)W_2 + b_2]]></content>
       <categories>
-          
-          <category> Deep learning </category>
-          
+        <category>Paper reading</category>
       </categories>
-      
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>开站首文！</title>
-      <link href="/post/ed43f525.html"/>
-      <url>/post/ed43f525.html</url>
-      
-        <content type="html"><![CDATA[<h2 id="Welcome-to-my-blog"><a href="#Welcome-to-my-blog" class="headerlink" title="Welcome to my blog!"></a>Welcome to my blog!</h2><p>在一顿折腾之后，我的个人博客也成功建立了。建立个人博客原因有许多，一是想记录自己技术栈不断丰富的历程，给我记笔记一些动力。二是分享记录自己的个人生活。三是跟风，很多优秀的程序员都有自己的个人博客，我也就跟着搭建了一个哈哈哈哈哈哈！</p><p>像我上面所说的，博客主要是用来记录生活和学习笔记。学习笔记是阶段性理解，可能有误大家辨证看待。生活方面则比较随性，更多的是闲暇时的思考和球评（其他的私人生活肯定都在朋友圈啦！）。</p><p>网站的UI会不断修改，功能也会日趋完善，敬请期待！</p>]]></content>
-      
-      
-      
-    </entry>
-    
-    
+  </entry>
+  <entry>
+    <title></title>
+    <url>/manifest.json</url>
+    <content><![CDATA[{"name":"Jimmy's Blog","short_name":"Jimmy's Blog","theme_color":"#3b70fc","background_color":"#3b70fc","display":"standalone","scope":"/","start_url":"/","icons":[{"src":"/img/siteicon/16.png","sizes":"16x16","type":"image/png"},{"src":"/img/siteicon/32.png","sizes":"32x32","type":"image/png"},{"src":"/img/siteicon/48.png","sizes":"48x48","type":"image/png"},{"src":"/img/siteicon/64.png","sizes":"64x64","type":"image/png"},{"src":"/img/siteicon/128.png","sizes":"128x128","type":"image/png"},{"src":"/img/siteicon/144.png","sizes":"144x144","type":"image/png"},{"src":"/img/siteicon/512.png","sizes":"512x512","type":"image/png"}],"splash_pages":null}]]></content>
+  </entry>
+  <entry>
+    <title>关于</title>
+    <url>/about/index.html</url>
+    <content><![CDATA[Hello!我是Jimmy Wen， 来自于广东省深圳市，是北京邮电大学2023级本科生，我会在这个博客分享学习笔记和记录生活，欢迎大家和我互相交流！
+有任何事情需要联系我，请发邮件到我的邮箱：1921439173@qq.com，我会尽快回复！
+
+一、个人爱好狂热篮球爱好者！NBA老球迷 + KD球迷，我也会在博客发表比赛的观后感以及我个人的一些分析和见解，欢迎球迷队迷理性辩论！
+喜欢打游戏，不过比较菜，皇室和火影玩的还算过得去，前者已经退坑了现在光刷职业选手视频，后者现在仍在上超影的路上红温中……上大学之后有了游戏本，开始接触PC端游戏，目前尤其喜欢只狼和胡闹厨房。除此之外，法环在新手期尚未体验完，大表哥2仍在仓库躺尸，有空一定沉浸式体验。
+喜欢影视作品和动漫，现在更多看电影，初中时期算是个动漫迷？看过不少动漫。希望大家能在评论区多给我推荐作品，给我的“深夜剧场”增添素材！
+
+二、个人经历深圳土著，会讲广东话（虽然会下意识带点松岗口音）。我初中毕业于宝安中学（初中部），高中毕业于深圳中学，目前就读于北京邮电大学。
+目前项目经历较少（求大佬带飞），距离一位优秀的程序员还有漫长的距离。会一些前后台分离式开发，目前希望能在具身智能方面有所突破。
+日常常用语言有C++，Python，Java以及前端三件套。大家可以关注一下我的GitHub，虽然暂时没啥有趣的创作，但“下次一定”！
+
+三、友人帐 &amp; 留言板留言板是当时看到这个很有趣的薇尔莉特插件所以设立。大家可以在这发表对于我的博客网站的改进建议或者是对于我的建议。当然整活也可以哈哈哈哈哈！
+友人帐即是友链，如果你也有个人博客网站，可以邮件私信我，挂上友情链接，也算是有个赛博羁绊了。
+]]></content>
+  </entry>
+  <entry>
+    <title></title>
+    <url>/css/custom.css</url>
+    <content><![CDATA[/* @font-face {
+  font-family: Candyhome;
+  src: url(https://npm.elemecdn.com/anzhiyu-blog@1.1.6/fonts/Candyhome.ttf);
+  font-display: swap;
+  font-weight: lighter;
+} */
+@font-face {
+    font-family: ZhuZiAYuanJWD;
+    src: url(https://npm.elemecdn.com/anzhiyu-blog@1.1.6/fonts/ZhuZiAWan.woff2);
+    font-display: swap;
+    font-weight: lighter;
+  }
   
+  div#menus {
+    font-family: "ZhuZiAYuanJWD";
+  }
+  h1#site-title {
+    font-family: ZhuZiAYuanJWD;
+    font-size: 3em !important;
+  }
+  div#site-subtitle {
+    font-family: ZhuZiAYuanJWD;
+    font-weight: bold;
+  }
+  a.article-title,
+  a.blog-slider__title,
+  a.categoryBar-list-link,
+  h1.post-title {
+    font-family: ZhuZiAYuanJWD;
+  }
   
-    
-    
-    <entry>
-      <title></title>
-      <link href="/manifest.json"/>
-      <url>/manifest.json</url>
-      
-        <content type="html"><![CDATA[{"name":"Jimmy's Blog","short_name":"Jimmy's Blog","theme_color":"#3b70fc","background_color":"#3b70fc","display":"standalone","scope":"/","start_url":"/","icons":[{"src":"/img/siteicon/16.png","sizes":"16x16","type":"image/png"},{"src":"/img/siteicon/32.png","sizes":"32x32","type":"image/png"},{"src":"/img/siteicon/48.png","sizes":"48x48","type":"image/png"},{"src":"/img/siteicon/64.png","sizes":"64x64","type":"image/png"},{"src":"/img/siteicon/128.png","sizes":"128x128","type":"image/png"},{"src":"/img/siteicon/144.png","sizes":"144x144","type":"image/png"},{"src":"/img/siteicon/512.png","sizes":"512x512","type":"image/png"}],"splash_pages":null}]]></content>
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>关于</title>
-      <link href="/about/index.html"/>
-      <url>/about/index.html</url>
-      
-        <content type="html"><![CDATA[<h3 id="Hello"><a href="#Hello" class="headerlink" title="Hello!"></a>Hello!</h3><p>我是Jimmy Wen， 来自于广东省深圳市，是北京邮电大学2023级本科生，我会在这个博客分享学习笔记和记录生活，欢迎大家和我互相交流！</p><p>有任何事情需要联系我，请发邮件到我的邮箱：1921439173@qq.com，我会尽快回复！</p><hr><h3 id="一、个人爱好"><a href="#一、个人爱好" class="headerlink" title="一、个人爱好"></a>一、个人爱好</h3><p>狂热篮球爱好者！NBA老球迷 + KD球迷，我也会在博客发表比赛的观后感以及我个人的一些分析和见解，欢迎球迷队迷理性辩论！</p><p>喜欢打游戏，不过比较菜，皇室和火影玩的还算过得去，前者已经退坑了现在光刷职业选手视频，后者现在仍在上超影的路上红温中……上大学之后有了游戏本，开始接触PC端游戏，目前尤其喜欢只狼和胡闹厨房。除此之外，法环在新手期尚未体验完，大表哥2仍在仓库躺尸，有空一定沉浸式体验。</p><p>喜欢影视作品和动漫，现在更多看电影，初中时期算是个动漫迷？看过不少动漫。希望大家能在评论区多给我推荐作品，给我的“深夜剧场”增添素材！</p><hr><h3 id="二、个人经历"><a href="#二、个人经历" class="headerlink" title="二、个人经历"></a>二、个人经历</h3><p>深圳土著，会讲广东话（虽然会下意识带点松岗口音）。我初中毕业于宝安中学（初中部），高中毕业于深圳中学，目前就读于北京邮电大学。</p><p>目前项目经历较少（求大佬带飞），距离一位优秀的程序员还有漫长的距离。会一些前后台分离式开发，目前希望能在具身智能方面有所突破。</p><p>日常常用语言有C++，Python，Java以及前端三件套。大家可以关注一下我的GitHub，虽然暂时没啥有趣的创作，但“下次一定”！</p><hr><h3 id="三、友人帐-amp-留言板"><a href="#三、友人帐-amp-留言板" class="headerlink" title="三、友人帐 &amp; 留言板"></a>三、友人帐 &amp; 留言板</h3><p>留言板是当时看到这个很有趣的薇尔莉特插件所以设立。大家可以在这发表对于我的博客网站的改进建议或者是对于我的建议。当然整活也可以哈哈哈哈哈！</p><p>友人帐即是友链，如果你也有个人博客网站，可以邮件私信我，挂上友情链接，也算是有个赛博羁绊了。</p>]]></content>
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>分类</title>
-      <link href="/categories/index.html"/>
-      <url>/categories/index.html</url>
-      
-        <content type="html"><![CDATA[]]></content>
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title></title>
-      <link href="/css/custom.css"/>
-      <url>/css/custom.css</url>
-      
-        <content type="html"><![CDATA[/* @font-face {  font-family: Candyhome;  src: url(https://npm.elemecdn.com/anzhiyu-blog@1.1.6/fonts/Candyhome.ttf);  font-display: swap;  font-weight: lighter;} */@font-face {    font-family: ZhuZiAYuanJWD;    src: url(https://npm.elemecdn.com/anzhiyu-blog@1.1.6/fonts/ZhuZiAWan.woff2);    font-display: swap;    font-weight: lighter;  }    div#menus {    font-family: "ZhuZiAYuanJWD";  }  h1#site-title {    font-family: ZhuZiAYuanJWD;    font-size: 3em !important;  }  div#site-subtitle {    font-family: ZhuZiAYuanJWD;    font-weight: bold;  }  a.article-title,  a.blog-slider__title,  a.categoryBar-list-link,  h1.post-title {    font-family: ZhuZiAYuanJWD;  }    .iconfont {    font-family: "iconfont" !important;    font-size: 3em;    /* 可以定义图标大小 */    font-style: normal;    -webkit-font-smoothing: antialiased;    -moz-osx-font-smoothing: grayscale;  }    /* 时间轴生肖icon */  svg.icon {    /* 这里定义svg.icon，避免和Butterfly自带的note标签冲突 */    width: 1em;    height: 1em;    /* width和height定义图标的默认宽度和高度*/    vertical-align: -0.15em;    fill: currentColor;    overflow: hidden;  }    .icon-zhongbiao::before {    color: #f7c768;  }    /* bilibli番剧插件 */  #article-container .bangumi-tab.bangumi-active {    background: var(--anzhiyu-theme);    color: var(--anzhiyu-ahoverbg);    border-radius: 10px;  }  a.bangumi-tab:hover {    text-decoration: none !important;  }  .bangumi-button:hover {    background: var(--anzhiyu-theme) !important;    border-radius: 10px !important;    color: var(--anzhiyu-ahoverbg) !important;  }  a.bangumi-button.bangumi-nextpage:hover {    text-decoration: none !important;  }  .bangumi-button {    padding: 5px 10px !important;  }    a.bangumi-tab {    padding: 5px 10px !important;  }  svg.icon.faa-tada {    font-size: 1.1em;  }  .bangumi-info-item {    border-right: 1px solid #f2b94b;  }  .bangumi-info-item span {    color: #f2b94b;  }  .bangumi-info-item em {    color: #f2b94b;  }    /* 解决artitalk的图标问题 */  #uploadSource > svg {    width: 1.19em;    height: 1.5em;  }    /*top-img黑色透明玻璃效果移除，不建议加，除非你执着于完全一图流或者背景图对比色明显 */  #page-header:not(.not-top-img):before {    background-color: transparent !important;  }    /* 首页文章卡片 */  #recent-posts > .recent-post-item {    background: rgba(255, 255, 255, 0.9);  }    /* 首页侧栏卡片 */  #aside-content .card-widget {    background: rgba(255, 255, 255, 0.9);  }    /* 文章页面正文背景 */  div#post {    background: rgba(255, 255, 255, 0.9);  }    /* 分页页面 */  div#page {    background: rgba(255, 255, 255, 0.9);  }    /* 归档页面 */  div#archive {    background: rgba(255, 255, 255, 0.9);  }    /* 标签页面 */  div#tag {    background: rgba(255, 255, 255, 0.9);  }    /* 分类页面 */  div#category {    background: rgba(255, 255, 255, 0.9);  }    /*夜间模式伪类遮罩层透明*/  [data-theme="dark"] #recent-posts > .recent-post-item {    background: #121212;  }    [data-theme="dark"] .card-widget {    background: #121212 !important;  }    [data-theme="dark"] div#post {    background: #121212 !important;  }    [data-theme="dark"] div#tag {    background: #121212 !important;  }    [data-theme="dark"] div#archive {    background: #121212 !important;  }    [data-theme="dark"] div#page {    background: #121212 !important;  }    [data-theme="dark"] div#category {    background: #121212 !important;  }    [data-theme="dark"] div#category {    background: transparent !important;  }  /* 页脚透明 */  #footer {    background: transparent !important;  }    /* 头图透明 */  #page-header {    background: transparent !important;  }    #rightside > div > button {    border-radius: 5px;  }    /* 滚动条 */    ::-webkit-scrollbar {    width: 10px;    height: 10px;  }    ::-webkit-scrollbar-thumb {    background-color: #3b70fc;    border-radius: 2em;  }    ::-webkit-scrollbar-corner {    background-color: transparent;  }    ::-moz-selection {    color: #fff;    background-color: #3b70fc;  }    /* 音乐播放器 */    /* .aplayer .aplayer-lrc {    display: none !important;  } */    .aplayer.aplayer-fixed.aplayer-narrow .aplayer-body {    left: -66px !important;    transition: all 0.3s;    /* 默认情况下缩进左侧66px，只留一点箭头部分 */  }    .aplayer.aplayer-fixed.aplayer-narrow .aplayer-body:hover {    left: 0 !important;    transition: all 0.3s;    /* 鼠标悬停是左侧缩进归零，完全显示按钮 */  }    .aplayer.aplayer-fixed {    z-index: 999999 !important;  }    /* 评论框  */  .vwrap {    box-shadow: 2px 2px 5px #bbb;    background: rgba(255, 255, 255, 0.3);    border-radius: 8px;    padding: 30px;    margin: 30px 0px 30px 0px;  }    /* 设置评论框 */    .vcard {    box-shadow: 2px 2px 5px #bbb;    background: rgba(255, 255, 255, 0.3);    border-radius: 8px;    padding: 30px;    margin: 30px 0px 0px 0px;  }    /* md网站下划线 */  #article-container a:hover {    text-decoration: none !important;  }    #article-container #hpp_talk p img {    display: inline;  }    /* 404页面 */  #error-wrap {    position: absolute;    top: 40%;    right: 0;    left: 0;    margin: 0 auto;    padding: 0 1rem;    max-width: 1000px;    transform: translate(0, -50%);  }    #error-wrap .error-content {    display: flex;    flex-direction: row;    justify-content: center;    align-items: center;    margin: 0 1rem;    height: 18rem;    border-radius: 8px;    background: var(--card-bg);    box-shadow: var(--card-box-shadow);    transition: all 0.3s;  }    #error-wrap .error-content .error-img {    box-flex: 1;    flex: 1;    height: 100%;    border-top-left-radius: 8px;    border-bottom-left-radius: 8px;    background-color: #3b70fc;    background-position: center;    background-size: cover;  }    #error-wrap .error-content .error-info {    box-flex: 1;    flex: 1;    padding: 0.5rem;    text-align: center;    font-size: 14px;    font-family: Titillium Web, "PingFang SC", "Hiragino Sans GB", "Microsoft JhengHei", "Microsoft YaHei", sans-serif;  }  #error-wrap .error-content .error-info .error_title {    margin-top: -4rem;    font-size: 9em;  }  #error-wrap .error-content .error-info .error_subtitle {    margin-top: -3.5rem;    word-break: break-word;    font-size: 1.6em;  }  #error-wrap .error-content .error-info a {    display: inline-block;    margin-top: 0.5rem;    padding: 0.3rem 1.5rem;    background: var(--btn-bg);    color: var(--btn-color);  }    #body-wrap.error .aside-list {    display: flex;    flex-direction: row;    flex-wrap: nowrap;    bottom: 0px;    position: absolute;    padding: 1rem;    width: 100%;    overflow: scroll;  }    #body-wrap.error .aside-list .aside-list-group {    display: flex;    flex-direction: row;    flex-wrap: nowrap;    max-width: 1200px;    margin: 0 auto;  }    #body-wrap.error .aside-list .aside-list-item {    padding: 0.5rem;  }    #body-wrap.error .aside-list .aside-list-item img {    width: 100%;    object-fit: cover;    border-radius: 12px;  }    #body-wrap.error .aside-list .aside-list-item .thumbnail {    overflow: hidden;    width: 230px;    height: 143px;    background: var(--anzhiyu-card-bg);    display: flex;  }    #body-wrap.error .aside-list .aside-list-item .content .title {    -webkit-line-clamp: 2;    line-clamp: 2;    overflow: hidden;    display: -webkit-box;    -webkit-box-orient: vertical;    line-height: 1.5;    justify-content: center;    align-items: flex-end;    align-content: center;    padding-top: 0.5rem;    color: white;  }    #body-wrap.error .aside-list .aside-list-item .content time {    display: none;  }    /* 代码框主题 */  #article-container figure.highlight {    border-radius: 10px;  }  body {    background: url('/img/bg.jpg') no-repeat center center fixed;    background-size: cover;  }]]></content>
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title></title>
-      <link href="/js/ali_font.js"/>
-      <url>/js/ali_font.js</url>
-      
-        <content type="html"><![CDATA[window._iconfont_svg_string_4894301='<svg><symbol id="icon-github" viewBox="0 0 1024 1024"><path d="M512 0C229.283787 0 0.142041 234.942803 0.142041 524.867683c0 231.829001 146.647305 428.553077 350.068189 497.952484 25.592898 4.819996 34.976961-11.38884 34.976961-25.294314 0-12.45521-0.469203-45.470049-0.725133-89.276559-142.381822 31.735193-172.453477-70.380469-172.453477-70.380469-23.246882-60.569859-56.816233-76.693384-56.816234-76.693385-46.493765-32.58829 3.540351-31.948468 3.540351-31.948467 51.356415 3.71097 78.356923 54.086324 78.356923 54.086324 45.683323 80.19108 119.817417 57.072162 148.993321 43.593236 4.649376-33.91059 17.915029-57.029508 32.50298-70.167195-113.675122-13.222997-233.151301-58.223843-233.1513-259.341366 0-57.285437 19.919806-104.163095 52.678715-140.846248-5.246544-13.265652-22.820334-66.626844 4.990615-138.884127 0 0 42.996069-14.076094 140.760939 53.787741 40.863327-11.644769 84.627183-17.445825 128.177764-17.6591 43.465272 0.213274 87.271782 6.014331 128.135109 17.6591 97.679561-67.906489 140.59032-53.787741 140.59032-53.787741 27.938914 72.257282 10.407779 125.618474 5.118579 138.884127 32.844219 36.683154 52.593405 83.560812 52.593405 140.846248 0 201.586726-119.646798 245.990404-233.663158 258.957473 18.341577 16.208835 34.721032 48.199958 34.721032 97.210357 0 70.167195-0.639822 126.7275-0.639823 143.960051 0 14.033439 9.213443 30.370239 35.190235 25.209005 203.250265-69.527373 349.769606-266.123484 349.769605-497.867175C1023.857959 234.942803 794.673558 0 512 0" fill="#3E75C3" ></path></symbol><symbol id="icon-bilibili" viewBox="0 0 1129 1024"><path d="M234.909 9.656a80.468 80.468 0 0 1 68.398 0 167.374 167.374 0 0 1 41.843 30.578l160.937 140.82h115.07l160.936-140.82a168.983 168.983 0 0 1 41.843-30.578A80.468 80.468 0 0 1 930.96 76.445a80.468 80.468 0 0 1-17.703 53.914 449.818 449.818 0 0 1-35.406 32.187 232.553 232.553 0 0 1-22.531 18.508h100.585a170.593 170.593 0 0 1 118.289 53.109 171.397 171.397 0 0 1 53.914 118.288v462.693a325.897 325.897 0 0 1-4.024 70.007 178.64 178.64 0 0 1-80.468 112.656 173.007 173.007 0 0 1-92.539 25.75h-738.7a341.186 341.186 0 0 1-72.421-4.024A177.835 177.835 0 0 1 28.91 939.065a172.202 172.202 0 0 1-27.36-92.539V388.662a360.498 360.498 0 0 1 0-66.789A177.03 177.03 0 0 1 162.487 178.64h105.414c-16.899-12.07-31.383-26.555-46.672-39.43a80.468 80.468 0 0 1-25.75-65.984 80.468 80.468 0 0 1 39.43-63.57M216.4 321.873a80.468 80.468 0 0 0-63.57 57.937 108.632 108.632 0 0 0 0 30.578v380.615a80.468 80.468 0 0 0 55.523 80.469 106.218 106.218 0 0 0 34.601 5.632h654.208a80.468 80.468 0 0 0 76.444-47.476 112.656 112.656 0 0 0 8.047-53.109v-354.06a135.187 135.187 0 0 0 0-38.625 80.468 80.468 0 0 0-52.304-54.719 129.554 129.554 0 0 0-49.89-7.242H254.22a268.764 268.764 0 0 0-37.82 0z m0 0" fill="#20B0E3" ></path><path d="M348.369 447.404a80.468 80.468 0 0 1 55.523 18.507 80.468 80.468 0 0 1 28.164 59.547v80.468a80.468 80.468 0 0 1-16.094 51.5 80.468 80.468 0 0 1-131.968-9.656 104.609 104.609 0 0 1-10.46-54.719v-80.468a80.468 80.468 0 0 1 70.007-67.593z m416.02 0a80.468 80.468 0 0 1 86.102 75.64v80.468a94.148 94.148 0 0 1-12.07 53.11 80.468 80.468 0 0 1-132.773 0 95.757 95.757 0 0 1-12.875-57.133V519.02a80.468 80.468 0 0 1 70.007-70.812z m0 0" fill="#20B0E3" ></path></symbol></svg>',(n=>{var t=(e=(e=document.getElementsByTagName("script"))[e.length-1]).getAttribute("data-injectcss"),e=e.getAttribute("data-disable-injectsvg");if(!e){var i,o,a,d,c,l=function(t,e){e.parentNode.insertBefore(t,e)};if(t&&!n.__iconfont__svg__cssinject__){n.__iconfont__svg__cssinject__=!0;try{document.write("<style>.svgfont {display: inline-block;width: 1em;height: 1em;fill: currentColor;vertical-align: -0.1em;font-size:16px;}</style>")}catch(t){console&&console.log(t)}}i=function(){var t,e=document.createElement("div");e.innerHTML=n._iconfont_svg_string_4894301,(e=e.getElementsByTagName("svg")[0])&&(e.setAttribute("aria-hidden","true"),e.style.position="absolute",e.style.width=0,e.style.height=0,e.style.overflow="hidden",e=e,(t=document.body).firstChild?l(e,t.firstChild):t.appendChild(e))},document.addEventListener?~["complete","loaded","interactive"].indexOf(document.readyState)?setTimeout(i,0):(o=function(){document.removeEventListener("DOMContentLoaded",o,!1),i()},document.addEventListener("DOMContentLoaded",o,!1)):document.attachEvent&&(a=i,d=n.document,c=!1,r(),d.onreadystatechange=function(){"complete"==d.readyState&&(d.onreadystatechange=null,s())})}function s(){c||(c=!0,a())}function r(){try{d.documentElement.doScroll("left")}catch(t){return void setTimeout(r,50)}s()}})(window);]]></content>
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>友人链</title>
-      <link href="/link/index.html"/>
-      <url>/link/index.html</url>
-      
-        <content type="html"><![CDATA[]]></content>
-      
-    </entry>
-    
-    
+  .iconfont {
+    font-family: "iconfont" !important;
+    font-size: 3em;
+    /* 可以定义图标大小 */
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
   
+  /* 时间轴生肖icon */
+  svg.icon {
+    /* 这里定义svg.icon，避免和Butterfly自带的note标签冲突 */
+    width: 1em;
+    height: 1em;
+    /* width和height定义图标的默认宽度和高度*/
+    vertical-align: -0.15em;
+    fill: currentColor;
+    overflow: hidden;
+  }
+  
+  .icon-zhongbiao::before {
+    color: #f7c768;
+  }
+  
+  /* bilibli番剧插件 */
+  #article-container .bangumi-tab.bangumi-active {
+    background: var(--anzhiyu-theme);
+    color: var(--anzhiyu-ahoverbg);
+    border-radius: 10px;
+  }
+  a.bangumi-tab:hover {
+    text-decoration: none !important;
+  }
+  .bangumi-button:hover {
+    background: var(--anzhiyu-theme) !important;
+    border-radius: 10px !important;
+    color: var(--anzhiyu-ahoverbg) !important;
+  }
+  a.bangumi-button.bangumi-nextpage:hover {
+    text-decoration: none !important;
+  }
+  .bangumi-button {
+    padding: 5px 10px !important;
+  }
+  
+  a.bangumi-tab {
+    padding: 5px 10px !important;
+  }
+  svg.icon.faa-tada {
+    font-size: 1.1em;
+  }
+  .bangumi-info-item {
+    border-right: 1px solid #f2b94b;
+  }
+  .bangumi-info-item span {
+    color: #f2b94b;
+  }
+  .bangumi-info-item em {
+    color: #f2b94b;
+  }
+  
+  /* 解决artitalk的图标问题 */
+  #uploadSource > svg {
+    width: 1.19em;
+    height: 1.5em;
+  }
+  
+  /*top-img黑色透明玻璃效果移除，不建议加，除非你执着于完全一图流或者背景图对比色明显 */
+  #page-header:not(.not-top-img):before {
+    background-color: transparent !important;
+  }
+  
+  /* 首页文章卡片 */
+  #recent-posts > .recent-post-item {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  
+  /* 首页侧栏卡片 */
+  #aside-content .card-widget {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  
+  /* 文章页面正文背景 */
+  div#post {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  
+  /* 分页页面 */
+  div#page {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  
+  /* 归档页面 */
+  div#archive {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  
+  /* 标签页面 */
+  div#tag {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  
+  /* 分类页面 */
+  div#category {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  
+  /*夜间模式伪类遮罩层透明*/
+  [data-theme="dark"] #recent-posts > .recent-post-item {
+    background: #121212;
+  }
+  
+  [data-theme="dark"] .card-widget {
+    background: #121212 !important;
+  }
+  
+  [data-theme="dark"] div#post {
+    background: #121212 !important;
+  }
+  
+  [data-theme="dark"] div#tag {
+    background: #121212 !important;
+  }
+  
+  [data-theme="dark"] div#archive {
+    background: #121212 !important;
+  }
+  
+  [data-theme="dark"] div#page {
+    background: #121212 !important;
+  }
+  
+  [data-theme="dark"] div#category {
+    background: #121212 !important;
+  }
+  
+  [data-theme="dark"] div#category {
+    background: transparent !important;
+  }
+  /* 页脚透明 */
+  #footer {
+    background: transparent !important;
+  }
+  
+  /* 头图透明 */
+  #page-header {
+    background: transparent !important;
+  }
+  
+  #rightside > div > button {
+    border-radius: 5px;
+  }
+  
+  /* 滚动条 */
+  
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: #3b70fc;
+    border-radius: 2em;
+  }
+  
+  ::-webkit-scrollbar-corner {
+    background-color: transparent;
+  }
+  
+  ::-moz-selection {
+    color: #fff;
+    background-color: #3b70fc;
+  }
+  
+  /* 音乐播放器 */
+  
+  /* .aplayer .aplayer-lrc {
+    display: none !important;
+  } */
+  
+  .aplayer.aplayer-fixed.aplayer-narrow .aplayer-body {
+    left: -66px !important;
+    transition: all 0.3s;
+    /* 默认情况下缩进左侧66px，只留一点箭头部分 */
+  }
+  
+  .aplayer.aplayer-fixed.aplayer-narrow .aplayer-body:hover {
+    left: 0 !important;
+    transition: all 0.3s;
+    /* 鼠标悬停是左侧缩进归零，完全显示按钮 */
+  }
+  
+  .aplayer.aplayer-fixed {
+    z-index: 999999 !important;
+  }
+  
+  /* 评论框  */
+  .vwrap {
+    box-shadow: 2px 2px 5px #bbb;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 30px;
+    margin: 30px 0px 30px 0px;
+  }
+  
+  /* 设置评论框 */
+  
+  .vcard {
+    box-shadow: 2px 2px 5px #bbb;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 30px;
+    margin: 30px 0px 0px 0px;
+  }
+  
+  /* md网站下划线 */
+  #article-container a:hover {
+    text-decoration: none !important;
+  }
+  
+  #article-container #hpp_talk p img {
+    display: inline;
+  }
+  
+  /* 404页面 */
+  #error-wrap {
+    position: absolute;
+    top: 40%;
+    right: 0;
+    left: 0;
+    margin: 0 auto;
+    padding: 0 1rem;
+    max-width: 1000px;
+    transform: translate(0, -50%);
+  }
+  
+  #error-wrap .error-content {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin: 0 1rem;
+    height: 18rem;
+    border-radius: 8px;
+    background: var(--card-bg);
+    box-shadow: var(--card-box-shadow);
+    transition: all 0.3s;
+  }
+  
+  #error-wrap .error-content .error-img {
+    box-flex: 1;
+    flex: 1;
+    height: 100%;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    background-color: #3b70fc;
+    background-position: center;
+    background-size: cover;
+  }
+  
+  #error-wrap .error-content .error-info {
+    box-flex: 1;
+    flex: 1;
+    padding: 0.5rem;
+    text-align: center;
+    font-size: 14px;
+    font-family: Titillium Web, "PingFang SC", "Hiragino Sans GB", "Microsoft JhengHei", "Microsoft YaHei", sans-serif;
+  }
+  #error-wrap .error-content .error-info .error_title {
+    margin-top: -4rem;
+    font-size: 9em;
+  }
+  #error-wrap .error-content .error-info .error_subtitle {
+    margin-top: -3.5rem;
+    word-break: break-word;
+    font-size: 1.6em;
+  }
+  #error-wrap .error-content .error-info a {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.3rem 1.5rem;
+    background: var(--btn-bg);
+    color: var(--btn-color);
+  }
+  
+  #body-wrap.error .aside-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    bottom: 0px;
+    position: absolute;
+    padding: 1rem;
+    width: 100%;
+    overflow: scroll;
+  }
+  
+  #body-wrap.error .aside-list .aside-list-group {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  #body-wrap.error .aside-list .aside-list-item {
+    padding: 0.5rem;
+  }
+  
+  #body-wrap.error .aside-list .aside-list-item img {
+    width: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+  }
+  
+  #body-wrap.error .aside-list .aside-list-item .thumbnail {
+    overflow: hidden;
+    width: 230px;
+    height: 143px;
+    background: var(--anzhiyu-card-bg);
+    display: flex;
+  }
+  
+  #body-wrap.error .aside-list .aside-list-item .content .title {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    line-height: 1.5;
+    justify-content: center;
+    align-items: flex-end;
+    align-content: center;
+    padding-top: 0.5rem;
+    color: white;
+  }
+  
+  #body-wrap.error .aside-list .aside-list-item .content time {
+    display: none;
+  }
+  
+  /* 代码框主题 */
+  #article-container figure.highlight {
+    border-radius: 10px;
+  }
+
+  body {
+    background: url('/img/bg.jpg') no-repeat center center fixed;
+    background-size: cover;
+  }]]></content>
+  </entry>
+  <entry>
+    <title>分类</title>
+    <url>/categories/index.html</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
+    <title></title>
+    <url>/js/ali_font.js</url>
+    <content><![CDATA[window._iconfont_svg_string_4894301='',(n=>{var t=(e=(e=document.getElementsByTagName("script"))[e.length-1]).getAttribute("data-injectcss"),e=e.getAttribute("data-disable-injectsvg");if(!e){var i,o,a,d,c,l=function(t,e){e.parentNode.insertBefore(t,e)};if(t&&!n.__iconfont__svg__cssinject__){n.__iconfont__svg__cssinject__=!0;try{document.write(".svgfont {display: inline-block;width: 1em;height: 1em;fill: currentColor;vertical-align: -0.1em;font-size:16px;}")}catch(t){console&&console.log(t)}}i=function(){var t,e=document.createElement("div");e.innerHTML=n._iconfont_svg_string_4894301,(e=e.getElementsByTagName("svg")[0])&&(e.setAttribute("aria-hidden","true"),e.style.position="absolute",e.style.width=0,e.style.height=0,e.style.overflow="hidden",e=e,(t=document.body).firstChild?l(e,t.firstChild):t.appendChild(e))},document.addEventListener?~["complete","loaded","interactive"].indexOf(document.readyState)?setTimeout(i,0):(o=function(){document.removeEventListener("DOMContentLoaded",o,!1),i()},document.addEventListener("DOMContentLoaded",o,!1)):document.attachEvent&&(a=i,d=n.document,c=!1,r(),d.onreadystatechange=function(){"complete"==d.readyState&&(d.onreadystatechange=null,s())})}function s(){c||(c=!0,a())}function r(){try{d.documentElement.doScroll("left")}catch(t){return void setTimeout(r,50)}s()}})(window);]]></content>
+  </entry>
+  <entry>
+    <title>友人链</title>
+    <url>/link/index.html</url>
+    <content><![CDATA[]]></content>
+  </entry>
 </search>
