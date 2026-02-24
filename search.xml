@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>开站首文！</title>
-    <url>/post/ed43f525.html</url>
-    <content><![CDATA[Welcome to my blog!在一顿折腾之后，我的个人博客也成功建立了。建立个人博客原因有许多，一是想记录自己技术栈不断丰富的历程，给我记笔记一些动力。二是分享记录自己的个人生活。三是跟风，很多优秀的程序员都有自己的个人博客，我也就跟着搭建了一个哈哈哈哈哈哈！
-像我上面所说的，博客主要是用来记录生活和学习笔记。学习笔记是阶段性理解，可能有误大家辨证看待。生活方面则比较随性，更多的是闲暇时的思考和球评（其他的私人生活肯定都在朋友圈啦！）。
-网站的UI会不断修改，功能也会日趋完善，敬请期待！
-]]></content>
-  </entry>
-  <entry>
     <title>深度学习基础</title>
     <url>/post/c0b3d81d.html</url>
     <content><![CDATA[不知道多久之前就说要写一些关于深度学习的笔记，结果被各种事情导致一拖再拖（当然也有自己懒的因素）。直到今天看完Andrej Karpathy的第三节课，我深知若再不记录，我只会学一点忘一点……
@@ -67,6 +59,14 @@ BLEU中为什么要对$p_n$使用$log$求和？
       </categories>
   </entry>
   <entry>
+    <title>开站首文！</title>
+    <url>/post/ed43f525.html</url>
+    <content><![CDATA[Welcome to my blog!在一顿折腾之后，我的个人博客也成功建立了。建立个人博客原因有许多，一是想记录自己技术栈不断丰富的历程，给我记笔记一些动力。二是分享记录自己的个人生活。三是跟风，很多优秀的程序员都有自己的个人博客，我也就跟着搭建了一个哈哈哈哈哈哈！
+像我上面所说的，博客主要是用来记录生活和学习笔记。学习笔记是阶段性理解，可能有误大家辨证看待。生活方面则比较随性，更多的是闲暇时的思考和球评（其他的私人生活肯定都在朋友圈啦！）。
+网站的UI会不断修改，功能也会日趋完善，敬请期待！
+]]></content>
+  </entry>
+  <entry>
     <title>From PPO to GRPO</title>
     <url>/post/98b9ed21.html</url>
     <content><![CDATA[先强力安利一下西湖大学赵世钰老师的强化学习的数学原理课程，在B站就能搜到，上完这个课程，你对强化学习在做些什么以及强化学习最基础的算法也就有个大概的了解了，里面涉及的相关数学公式和定理有个大概了解即可，不需要太过关注背后严谨的证明过程（有兴趣且有足够的时间可以钻研）。
@@ -95,14 +95,6 @@ L^{\text{CLIP}}(\theta)=\mathbb{E}_t\Big[\min\big( \frac{\pi_{\theta}(a_t|s_t)}{
 
 \mathcal{J}_{\text{GRPO}}(\theta) = \mathbb{E}\left[q \sim P(Q), \{o_i\}_{i=1}^G \sim \pi_{\theta_{\text{old}}}(O|q)\right]
 \frac{1}{G} \sum_{i=1}^G \frac{1}{|o_i|} \sum_{t=1}^{|o_i|} \left\{ \min \left[ \frac{\pi_\theta(o_{i,t}|q, o_{i,]]></content>
-      <categories>
-        <category>Paper reading</category>
-      </categories>
-  </entry>
-  <entry>
-    <title></title>
-    <url>/post/0.html</url>
-    <content><![CDATA[]]></content>
       <categories>
         <category>Paper reading</category>
       </categories>
@@ -140,7 +132,39 @@ $d_{model}$ 表示词向量的维度
 
 这种方式为不同维度创建了不同的波长，当i比较小时，波长短，函数变化快，有助于捕捉近距离关系，高敏感性；当i比较大时，波长长，函数变化慢，有助于学习长距离依赖关系。
 与Andrej在课中实现的不同，这种编码是不可训练的，在模型开始这个数值就已经确定，加入到词嵌入矩阵中；而Andrej在课中使用的是可训练的位置矩阵。前者可处理更长序列，后者只能处理训练时见过的长度，适应性差。
-]]></content>
+无论是论文中使用的正余弦编码，还是Andrej课中使用的位置矩阵，都属于绝对位置编码。除此之外，还有相对位置编码，使用相对位置，当两个文本平移一段距离，他们之间相对位置不变，可以有效过滤掉绝对位置编码带来的无关信息。
+和绝对位置编码作用在词嵌入矩阵不同，相对位置编码主要作用于注意力机制中，目前使用最多的相对位置编码是旋转位置编码（RoPE），公式如下：
+首先将向量两两配对，看作一系列二维平面，给定一个绝对位置(p)，对于第 ( i ) 对维度 ( (2i, 2i+1) )，我们定义一个旋转角：
+
+\theta_{p,i} = p \cdot \omega_i其中（base是控制频率范围的超参数）：
+
+\omega_i = \frac{1}{\text{base}^{2i/d_{\text{head}}}}对于任意一个向量 ( x ) (( Q/K ))，其位于第 ( i ) 个二维平面上的分量 ( (x{2i}, x{2i+1}) ) 会被旋转 ( \theta_{p,i} ) 角度：
+
+\begin{bmatrix}
+x'_{2i} \\
+x'_{2i+1}
+\end{bmatrix} = 
+\begin{bmatrix}
+\cos(\theta_{p,i}) & -\sin(\theta_{p,i}) \\
+\sin(\theta_{p,i}) & \cos(\theta_{p,i})
+\end{bmatrix}
+\begin{bmatrix}
+x_{2i} \\
+x_{2i+1}
+\end{bmatrix}等价于复数运算：将 ( x{2i} + j \cdot x{2i+1} ) 乘上 ( e^{j\theta_{p,i}} )。
+当(Q)和(K)都经过旋转位置编码之后，注意力计算公式即变为：
+
+Attention(Q_m, K_n) = \text{softmax} \left( \frac{f(q, m) \cdot f(k, n)^T}{\sqrt{d_k}} \right)其中关键的内积公式变为：
+
+f(q, m) \cdot f(k, n) = q \cdot k \cdot e^{i(m-n)\theta}]]></content>
+      <categories>
+        <category>Paper reading</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>LightRAG: Simple and fast retrieval-augmented generation</title>
+    <url>/post/0.html</url>
+    <content><![CDATA[]]></content>
       <categories>
         <category>Paper reading</category>
       </categories>
@@ -149,6 +173,11 @@ $d_{model}$ 表示词向量的维度
     <title></title>
     <url>/manifest.json</url>
     <content><![CDATA[{"name":"Jimmy's Blog","short_name":"Jimmy's Blog","theme_color":"#3b70fc","background_color":"#3b70fc","display":"standalone","scope":"/","start_url":"/","icons":[{"src":"/img/siteicon/16.png","sizes":"16x16","type":"image/png"},{"src":"/img/siteicon/32.png","sizes":"32x32","type":"image/png"},{"src":"/img/siteicon/48.png","sizes":"48x48","type":"image/png"},{"src":"/img/siteicon/64.png","sizes":"64x64","type":"image/png"},{"src":"/img/siteicon/128.png","sizes":"128x128","type":"image/png"},{"src":"/img/siteicon/144.png","sizes":"144x144","type":"image/png"},{"src":"/img/siteicon/512.png","sizes":"512x512","type":"image/png"}],"splash_pages":null}]]></content>
+  </entry>
+  <entry>
+    <title>分类</title>
+    <url>/categories/index.html</url>
+    <content><![CDATA[]]></content>
   </entry>
   <entry>
     <title>关于</title>
@@ -167,11 +196,6 @@ $d_{model}$ 表示词向量的维度
 三、友人帐 &amp; 留言板留言板是当时看到这个很有趣的薇尔莉特插件所以设立。大家可以在这发表对于我的博客网站的改进建议或者是对于我的建议。当然整活也可以哈哈哈哈哈！
 友人帐即是友链，如果你也有个人博客网站，可以邮件私信我，挂上友情链接，也算是有个赛博羁绊了。
 ]]></content>
-  </entry>
-  <entry>
-    <title>分类</title>
-    <url>/categories/index.html</url>
-    <content><![CDATA[]]></content>
   </entry>
   <entry>
     <title></title>
