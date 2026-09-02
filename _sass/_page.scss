@@ -111,6 +111,74 @@
     font-size: $type-size-6;
   }
 
+  .education-list,
+  .experience-list {
+    margin: 0.75em 0 1em;
+  }
+
+  .education-item,
+  .experience-item {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    padding: 1em 0;
+    border-bottom: 1px solid $border-color;
+  }
+
+  .education-item__logo,
+  .experience-item__logo {
+    flex: 0 0 120px;
+    width: 120px;
+    height: 120px;
+    margin: 0;
+    object-fit: contain;
+  }
+
+  .education-item__details,
+  .experience-item__details {
+    min-width: 0;
+  }
+
+  .education-item__school,
+  .experience-item__school {
+    margin: 0;
+    font-family: $sans-serif-narrow;
+    font-size: $type-size-4;
+    font-weight: bold;
+    line-height: 1.25;
+  }
+
+  .education-item__degree,
+  .education-item__period,
+  .experience-item__role,
+  .experience-item__period {
+    margin: 0.55em 0 0;
+    font-size: $type-size-5;
+    line-height: 1.4;
+  }
+
+  .education-item__period,
+  .experience-item__period {
+    color: mix(#fff, $gray, 25%);
+  }
+
+  @include breakpoint(max-width $small) {
+    .education-item,
+    .experience-item {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 1em;
+      padding: 1em 0;
+    }
+
+    .education-item__logo,
+    .experience-item__logo {
+      flex-basis: 96px;
+      width: 96px;
+      height: 96px;
+    }
+  }
+
   /* blockquote citations */
   blockquote + .small {
     margin-top: -1.5em;
