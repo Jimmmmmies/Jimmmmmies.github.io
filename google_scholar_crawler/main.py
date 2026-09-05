@@ -1,23 +1,66 @@
-from scholarly import scholarly
-import jsonpickle
+from scholarly import ProxyGenerator, scholarly
 import json
-from datetime import datetime
 import os
+from datetime import datetime, timezone
 
-author: dict = scholarly.search_author_id(os.environ['GOOGLE_SCHOLAR_ID'])
-scholarly.fill(author, sections=['basics', 'indices', 'counts', 'publications'])
-name = author['name']
-author['updated'] = str(datetime.now())
-author['publications'] = {v['author_pub_id']:v for v in author['publications']}
+
+class CitationDataUnavailable(RuntimeError):
+    """Raised when Google Scholar returns an incomplete author profile."""
+
+
+def configure_proxy() -> None:
+    """Optionally route Scholar traffic through a user-provided proxy."""
+    proxy_url = os.getenv("GOOGLE_SCHOLAR_PROXY")
+    if not proxy_url:
+        return
+
+    proxy = ProxyGenerator()
+    if not proxy.SingleProxy(http=proxy_url, https=proxy_url):
+        raise RuntimeError("GOOGLE_SCHOLAR_PROXY could not be configured.")
+    scholarly.use_proxy(proxy, proxy)
+
+
+def fetch_author() -> dict:
+    scholar_id = os.getenv("GOOGLE_SCHOLAR_ID")
+    if not scholar_id:
+        raise RuntimeError("GOOGLE_SCHOLAR_ID is not configured.")
+
+    configure_proxy()
+    author = scholarly.search_author_id(scholar_id)
+    author = scholarly.fill(
+        author,
+        sections=["basics", "indices", "counts", "publications"],
+    )
+
+    if "citedby" not in author:
+        available_fields = ", ".join(sorted(author.keys()))
+        raise CitationDataUnavailable(
+            "Google Scholar returned an incomplete profile without 'citedby'. "
+            "This is usually caused by rate limiting, a CAPTCHA, or a changed "
+            f"Scholar response. Available fields: {available_fields}"
+        )
+    if "publications" not in author:
+        raise CitationDataUnavailable(
+            "Google Scholar returned an incomplete profile without publications."
+        )
+
+    return author
+
+
+author = fetch_author()
+author["updated"] = datetime.now(timezone.utc).isoformat()
+author["publications"] = {
+    publication["author_pub_id"]: publication for publication in author["publications"]
+}
 print(json.dumps(author, indent=2))
-os.makedirs('results', exist_ok=True)
-with open(f'results/gs_data.json', 'w') as outfile:
+os.makedirs("results", exist_ok=True)
+with open("results/gs_data.json", "w") as outfile:
     json.dump(author, outfile, ensure_ascii=False)
 
 shieldio_data = {
   "schemaVersion": 1,
   "label": "citations",
-  "message": f"{author['citedby']}",
+  "message": str(author["citedby"]),
 }
-with open(f'results/gs_data_shieldsio.json', 'w') as outfile:
+with open("results/gs_data_shieldsio.json", "w") as outfile:
     json.dump(shieldio_data, outfile, ensure_ascii=False)

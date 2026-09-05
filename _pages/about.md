@@ -21,7 +21,7 @@ redirect_from:
 
 I am a senior student at Beijing University of Posts and Telecommunications, majoring in Internet of Things Engineering. Before that, I studied at Shenzhen Middle School. I am currently seeking for research collaborations and MPhil/PhD oppotunities. Feel free to contact me!
 
-My research interests lie primarily in **LLM Safety** and **Robotics**. On the safety side, I currently focus on **privacy in Graph Neural Networks and agentic systems**, including attacks that infer or extract sensitive information as well as mechanisms for protecting privacy against such threats. On the robotics side, I am interested in **multi-agent systems for embodied intelligence**, currently their applications to **self driving lab**.
+My research interests lie primarily in **LLM Safety** and **Robotics**. On the safety side, I currently focus on **privacy in Graph Neural Networks and agentic systems**, including attacks that infer or extract sensitive information as well as mechanisms for protecting privacy against such threats. On the robotics side, I am interested in **multi-agent systems for embodied intelligence**, currently their applications to **self driving labs**.
 
 <span class="anchor" id="news"></span>
 
