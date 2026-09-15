@@ -45,7 +45,7 @@ Longzhu He, **Zelang Wen**, Chaozhuo Li, Sen Su
 <span class="anchor" id="honors-and-awards"></span>
 
 # 🎖 Honors and Awards
-- **"Three Good Student", BUPT**, freshment year
+- **"Three Good Student", BUPT**, Freshman year
 - **BUPT University Scholarship - Third Class**, Academic year 2023-2024 & 2024-2025
 - **Embodied AI Application Scenario Challenge in 2025 International Humanoid Robot Skills Competition (Zhangjiang Launch Tournament) - Innovation Award**, 2025.06
 - **Beijing Division - Second Prize** Mathematics competition of Chinese College Students, 2025.12
@@ -56,7 +56,7 @@ Longzhu He, **Zelang Wen**, Chaozhuo Li, Sen Su
 
 <div class="education-list">
   <section class="education-item">
-    <img class="education-item__logo" src="{{ '/images/education/bupt-logo.png' | relative_url }}" alt="Beijing University of Posts and Telecommunications emblem">
+    <img class="education-item__logo education-item__logo--bupt" src="{{ '/images/education/bupt-logo.png' | relative_url }}" alt="Beijing University of Posts and Telecommunications emblem">
     <div class="education-item__details">
       <h2 class="education-item__school">Beijing University of Posts and Telecommunications</h2>
       <p class="education-item__degree">B.Eng. in Internet of Things Engineering</p>
@@ -82,14 +82,14 @@ Longzhu He, **Zelang Wen**, Chaozhuo Li, Sen Su
   <section class="experience-item">
     <img class="experience-item__logo" src="{{ '/images/education/tsinghua-university-logo.png' | relative_url }}" alt="Tsinghua University emblem">
     <div class="experience-item__details">
-      <h2 class="experience-item__school">Tsinghua University</h2>
+      <h2 class="experience-item__school">State Key Laboratory of Intelligent Technology and Systems, Tsinghua University</h2>
       <p class="experience-item__role">Research Assistant - supervised by Prof. Huaping Liu</p>
       <p class="experience-item__period">Jun. 2026 - Present</p>
     </div>
   </section>
 
   <section class="experience-item">
-    <img class="experience-item__logo" src="{{ '/images/education/bupt-logo.png' | relative_url }}" alt="Beijing University of Posts and Telecommunications emblem">
+    <img class="experience-item__logo experience-item__logo--bupt" src="{{ '/images/education/bupt-logo.png' | relative_url }}" alt="Beijing University of Posts and Telecommunications emblem">
     <div class="experience-item__details">
       <h2 class="experience-item__school">State Key Laboratory of Networking and Switching Technology, Beijing University of Posts and Telecommunications</h2>
       <p class="experience-item__role">Research Assistant - supervised by Prof. Sen Su</p>
@@ -98,11 +98,11 @@ Longzhu He, **Zelang Wen**, Chaozhuo Li, Sen Su
   </section>
 
   <section class="experience-item">
-    <img class="experience-item__logo" src="{{ '/images/education/bupt-logo.png' | relative_url }}" alt="Beijing University of Posts and Telecommunications emblem">
+    <img class="experience-item__logo experience-item__logo--bupt" src="{{ '/images/education/bupt-logo.png' | relative_url }}" alt="Beijing University of Posts and Telecommunications emblem">
     <div class="experience-item__details">
       <h2 class="experience-item__school">DeepTouch Lab, Beijing University of Posts and Telecommunications</h2>
       <p class="experience-item__role">Research Assistant, supervised by Prof. Bin Fang</p>
-      <p class="experience-item__period">Mar. 2025 - Sep. 2026</p>
+      <p class="experience-item__period">Mar. 2025 - Sep. 2025</p>
     </div>
   </section>
 </div>

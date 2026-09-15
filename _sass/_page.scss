@@ -134,6 +134,11 @@
     object-fit: contain;
   }
 
+  .education-item__logo--bupt,
+  .experience-item__logo--bupt {
+    transform: scale(1.15);
+  }
+
   .education-item__details,
   .experience-item__details {
     min-width: 0;
