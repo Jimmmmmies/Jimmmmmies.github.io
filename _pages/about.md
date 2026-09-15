@@ -21,7 +21,7 @@ redirect_from:
 
 I am a senior student at Beijing University of Posts and Telecommunications, majoring in Internet of Things Engineering. Before that, I studied at Shenzhen Middle School. I am currently seeking for research collaborations and MPhil/PhD oppotunities. Feel free to contact me!
 
-My research interests lie primarily in **LLM Safety** and **Robotics**. On the safety side, I currently focus on **privacy in Graph Neural Networks and agentic systems**, including attacks that infer or extract sensitive information as well as mechanisms for protecting privacy against such threats. On the robotics side, I am interested in **multi-agent systems for embodied intelligence**, currently their applications to **self driving labs**.
+My research interests lie primarily in **AI Security** and **Robotics**. On the security side, I currently focus on **privacy in Graph Neural Networks and agentic systems**, including attacks that infer or extract sensitive information as well as mechanisms for protecting privacy against such threats. On the robotics side, I am interested in **multi-agent systems for embodied intelligence**, currently their applications to **self driving labs**.
 
 <span class="anchor" id="news"></span>
 
@@ -45,9 +45,10 @@ Longzhu He, **Zelang Wen**, Chaozhuo Li, Sen Su
 <span class="anchor" id="honors-and-awards"></span>
 
 # 🎖 Honors and Awards
-- **Beijing Division - Second Prize** Mathematics competition of Chinese College Students, 2025.12
+- **"Three Good Student", BUPT**, freshment year
 - **BUPT University Scholarship - Third Class**, Academic year 2023-2024 & 2024-2025
 - **Embodied AI Application Scenario Challenge in 2025 International Humanoid Robot Skills Competition (Zhangjiang Launch Tournament) - Innovation Award**, 2025.06
+- **Beijing Division - Second Prize** Mathematics competition of Chinese College Students, 2025.12
 
 <span class="anchor" id="education"></span>
 
@@ -79,11 +80,11 @@ Longzhu He, **Zelang Wen**, Chaozhuo Li, Sen Su
 
 <div class="experience-list">
   <section class="experience-item">
-    <img class="experience-item__logo" src="{{ '/images/education/bupt-logo.png' | relative_url }}" alt="Beijing University of Posts and Telecommunications emblem">
+    <img class="experience-item__logo" src="{{ '/images/education/tsinghua-university-logo.png' | relative_url }}" alt="Tsinghua University emblem">
     <div class="experience-item__details">
-      <h2 class="experience-item__school">DeepTouch Lab, Beijing University of Posts and Telecommunications</h2>
-      <p class="experience-item__role">Research Assistant, supervised by Prof. Bin Fang</p>
-      <p class="experience-item__period">Jun. 2025 - Dec. 2026</p>
+      <h2 class="experience-item__school">Tsinghua University</h2>
+      <p class="experience-item__role">Research Assistant - supervised by Prof. Huaping Liu</p>
+      <p class="experience-item__period">Jun. 2026 - Present</p>
     </div>
   </section>
 
@@ -92,16 +93,16 @@ Longzhu He, **Zelang Wen**, Chaozhuo Li, Sen Su
     <div class="experience-item__details">
       <h2 class="experience-item__school">State Key Laboratory of Networking and Switching Technology, Beijing University of Posts and Telecommunications</h2>
       <p class="experience-item__role">Research Assistant - supervised by Prof. Sen Su</p>
-      <p class="experience-item__period">Mar. 2026 - Jul. 2026</p>
+      <p class="experience-item__period">Jan. 2026 - Jun. 2026</p>
     </div>
   </section>
 
   <section class="experience-item">
-    <img class="experience-item__logo" src="{{ '/images/education/tsinghua-university-logo.png' | relative_url }}" alt="Tsinghua University emblem">
+    <img class="experience-item__logo" src="{{ '/images/education/bupt-logo.png' | relative_url }}" alt="Beijing University of Posts and Telecommunications emblem">
     <div class="experience-item__details">
-      <h2 class="experience-item__school">Tsinghua University</h2>
-      <p class="experience-item__role">Research Assistant - supervised by Prof. Huaping Liu</p>
-      <p class="experience-item__period">Jul. 2026 - Present</p>
+      <h2 class="experience-item__school">DeepTouch Lab, Beijing University of Posts and Telecommunications</h2>
+      <p class="experience-item__role">Research Assistant, supervised by Prof. Bin Fang</p>
+      <p class="experience-item__period">Mar. 2025 - Sep. 2026</p>
     </div>
   </section>
 </div>
