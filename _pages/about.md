@@ -35,9 +35,19 @@ My research interests lie primarily in **AI Security** and **Robotics**. On the 
 <div class='paper-box'><div class='paper-box-image'><div><div class="badge">Preprint</div><img src='images/PrivGNN.png' alt="sym" width="100%"></div></div>
 <div class='paper-box-text' markdown="1">
 
-[Are LLM-Enhanced GNNs Privacy-Safe?](https://arxiv.org/pdf/2608.25727)
+[Auditing Privacy Risks in LLM-Enhanced Graph Neural Networks](https://arxiv.org/pdf/2608.25727)
 
-Longzhu He, **Zelang Wen**, Chaozhuo Li, Sen Su
+Longzhu He<sup>*</sup>, **Zelang Wen**<sup>*</sup>, Chaozhuo Li, Sen Su
+
+</div>
+</div>
+
+<div class='paper-box'><div class='paper-box-image'><div><div class="badge">Preprint</div><img src='{{ "/images/MIRAGE.png" | relative_url }}' alt="Overview of the MIRAGE topology-concealment framework" width="100%"></div></div>
+<div class='paper-box-text' markdown="1">
+
+[Concealing LLM-Based Multi-Agent Topology via Phantom Structure Injection](https://arxiv.org/pdf/2609.37567)
+
+Longzhu He, **Zelang Wen**, Xinfeng Li, Sen Su, XiaoFeng Wang
 
 </div>
 </div>
