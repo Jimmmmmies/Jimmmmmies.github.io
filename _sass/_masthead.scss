@@ -14,14 +14,12 @@
   z-index: 20;
 
   &__inner-wrap {
-    @include container;
     @include clearfix;
-    padding: .5em;
+    width: 100%;
+    max-width: $content-max-width;
+    margin: 0 auto;
+    padding: .5em 24px;
     font-family: $sans-serif-narrow;
-
-    @include breakpoint($x-large) {
-      max-width: $x-large;
-    }
 
     nav {
       z-index: 10;
@@ -43,21 +41,75 @@
   }
 }
 
-.masthead__menu-home-item {
-  @include breakpoint($medium) {
-    display: block !important;
-  }
-  display: none !important;
-}
-
 .masthead__menu-item {
   display: block;
   list-style-type: none;
   white-space: nowrap;
+}
 
-  &--lg {
-    padding-right: 2em;
+.masthead .site-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 2rem;
+
+  &__brand {
+    flex: 0 0 auto;
+    padding: 0.5rem 0;
+    font-size: 18px;
     font-weight: 700;
+  }
+
+  &__links {
+    display: flex;
+    flex-wrap: wrap;
+    flex: 0 1 auto;
+    justify-content: flex-end;
+    gap: 0.25rem 1.2rem;
+    min-width: 0;
+    margin-left: auto;
+    font-size: 17px;
+
+    a {
+      display: block;
+      padding: 0.5rem 0;
+    }
+  }
+
+  a {
+    color: $masthead-link-color;
+    transition: color 0.15s ease;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: #6aaed6;
+      outline: none;
+      box-shadow: none;
+      text-decoration: none;
+    }
+
+    &::before {
+      display: none;
+    }
+  }
+}
+
+@include breakpoint(max-width $small) {
+  .masthead__inner-wrap {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .masthead .site-navigation {
+    gap: 0.25rem;
+
+    &__links {
+      flex-basis: 100%;
+      justify-content: flex-start;
+      gap: 0.15rem 1rem;
+    }
   }
 }
 

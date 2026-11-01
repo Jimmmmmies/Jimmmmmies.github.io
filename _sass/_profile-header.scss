@@ -1,0 +1,100 @@
+/* A compact academic introduction, using the site's existing typefaces. */
+.profile-header {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  align-items: center;
+  gap: 2.4rem;
+  margin-bottom: 2.25rem;
+
+  &__avatar {
+    display: block;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  &__info {
+    min-width: 0;
+  }
+
+  &__name {
+    margin: 0 0 0.6rem;
+    font-size: 38px;
+    line-height: 1.2;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  &__description,
+  &__bio {
+    margin: 0.3rem 0;
+  }
+
+  &__meta {
+    margin: 0.35rem 0 0;
+    color: $dark-gray;
+  }
+
+  &__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.55rem;
+    margin: 0.85rem 0 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: inline-flex;
+      align-items: center;
+      margin: 0;
+    }
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: $border-radius;
+      font-size: 1.4rem;
+      line-height: 1;
+      text-decoration: none;
+
+      &:hover {
+        color: $link-color-hover;
+        background: $lighter-gray;
+        text-decoration: none;
+      }
+    }
+  }
+
+  @include breakpoint(max-width $small) {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 1.25rem;
+    margin-bottom: 1.75rem;
+    text-align: center;
+
+    &__avatar {
+      width: 150px;
+      height: 150px;
+    }
+
+    &__name {
+      font-size: 32px;
+    }
+
+    &__links {
+      justify-content: center;
+    }
+  }
+}
+
+@include breakpoint(max-width $small) {
+  #main {
+    padding: 2rem 20px 2.5rem;
+  }
+}

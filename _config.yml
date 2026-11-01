@@ -22,9 +22,10 @@ baidu_site_verification  :  # get baidu_site_verification from https://ziyuan.ba
 # Site Author
 author:
   name             : "Zelang Wen"
+  display_name     : "Zelang (Jimmy) Wen"
   avatar           : "images/selfie2.jpeg"
   bio              : ""
-  location         : "Shenzhen, China"
+  location         : "Guangdong, China"
   employer         :
   pubmed           : 
   googlescholar    : "https://scholar.google.com/citations?hl=en&user=seIECagAAAAJ"

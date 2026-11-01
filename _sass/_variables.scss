@@ -128,6 +128,9 @@ $right-sidebar-width-narrow : 0px;
 $right-sidebar-width        : 0px;
 $right-sidebar-width-wide   : 0px;
 
+/* Shared reading width, independent of responsive breakpoints. */
+$content-max-width          : 840px;
+
 $susy: (
   columns: 12,
   column-width: 120px,
